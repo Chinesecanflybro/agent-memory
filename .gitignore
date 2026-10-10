@@ -19,3 +19,6 @@ memory/events/archive/*.jsonl
 .idea/
 .DS_Store
 Thumbs.db
+
+# 临时工作区：待发内容草稿，不进版本控制
+SCRATCH.md
