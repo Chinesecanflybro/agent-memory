@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 本地配置：记忆库位置因人而异，不进版本控制
+# 若你想把记忆库位置也纳入版本控制，删掉下面这行
+.memory-root
+
+# 记忆库运行时产物
+memory/backup/
+memory/evidence/
+memory/import/
+memory/events/archive/*.jsonl
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
