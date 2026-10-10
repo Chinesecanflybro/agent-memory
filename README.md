@@ -5,6 +5,10 @@
 一个给 AI coding agent 用的跨会话长期记忆骨架。基于 `AGENTS.md` 自动注入，
 用 Markdown + 索引 + 自检脚本，**不需要数据库、不需要向量库、不需要云服务**。
 
+**它不追求密码学强度。** 如果你需要防伪造的 provenance，去看
+[AEP](https://github.com/OnePunchForAll/AEP)；这个仓库要的是
+**打开文件就能读、零依赖、靠机械自检拦住"把不确定当确定"**。
+
 ---
 
 ## 问题
@@ -18,23 +22,48 @@ AI 每次开新对话就失忆。更糟的不是"忘了"，而是**它会把不�
 
 前三个问题是上下文断裂，**第四个是编造**。
 
-## 现有方案的缺口
+## 现有方案与缺口
 
-调研了 GitHub 上主要的内存/记忆项目后的结论（2026-10）：
+调研时间 2026-10。**这张表我改过一次——因为发现自己的断言过头了，详见下方"更正记录"。**
 
-| 项目 | 存储与检索 | 证据分级 | 冲突检测 |
+| 项目 | 存储与检索 | 证据状态 | 冲突检测 |
 |---|---|---|---|
-| claude-mem（98.9k★） | ✅ SQLite+FTS5+向量 | ❌ | ❌ |
-| MemOS（11.8k★） | ✅ SQLite+FTS5+向量 | ❌ | ❌ |
-| Graphiti（31.6k★） | ✅ 双时间轴图谱 | 🟡 有计划/失效时间 | ❌ 无级联 |
-| Basic Memory（4.1k★） | ✅ Markdown+SQLite | ❌ | ❌ |
-| remembrane（13★） | ✅ 单文件 SQLite | ❌ | ✅ **拒绝静默消解** |
+| [claude-mem](https://github.com/thedotmack/claude-mem)（98.9k★） | ✅ SQLite+FTS5+向量 | 🟡 **部分**——有 observer 层的 evidence-gate（[issue #3162](https://github.com/thedotmack/claude-mem/issues/3162) / [PR #3180](https://github.com/thedotmack/claude-mem/pull/3180)：防止"未发生写操作就断言已完成"），但不是 claim 级五态 | ❌ |
+| [AEP — Agent Evidence Packet](https://github.com/OnePunchForAll/AEP) | ✅ schema 校验的文件格式 | ✅ **是**——typed claims + sha256 quote hashes + Merkle 完整性 + **per-claim reliability state** | ❌ |
+| [MemOS](https://github.com/MemTensor/MemOS)（11.8k★） | ✅ SQLite+FTS5+向量 | ❌ | ❌ |
+| [Graphiti](https://github.com/getzep/graphiti)（31.6k★） | ✅ 双时间轴图谱 | 🟡 有计划/失效时间 | ❌ 无级联 |
+| [Basic Memory](https://github.com/basicmachines-co/basic-memory)（4.1k★） | ✅ Markdown+SQLite | ❌ | ❌ |
+| [remembrane](https://github.com/satysairay/remembrane)（13★） | ✅ 单文件 SQLite | ❌ | ✅ **拒绝静默消解** |
 
-**没有已发布系统区分** `planned / changed / ran / test-passed / independently-verified`。
-最接近的是三篇 2026 年论文（[PACMI](https://arxiv.org/abs/2610.05732)、
-[TierMem](https://arxiv.org/abs/2602.17913)、ZoneClaw）——**都还没有可用代码**。
+**所以"证据状态"这件事已经有人在做，不是无人区。** 论文层面还有
+[PACMI](https://arxiv.org/abs/2610.05732)、[TierMem](https://arxiv.org/abs/2602.17913)、
+以及 [MutMem V2](https://arxiv.org/pdf/2609.01235)（密码学授权的记忆变更）。
 
-**这个仓库补的就是这块。**
+### 那这个仓库的不同点在哪
+
+**不是"第一个做证据状态"，而是"用最轻的方式做"：**
+
+| | AEP 这类方案 | 本仓库 |
+|---|---|---|
+| 形态 | schema 校验的文件格式 | **纯 Markdown + 行内标记** |
+| 完整性 | sha256 quote hash + Merkle 树 | 无密码学；靠**机械自检脚本**发现空口声明 |
+| 依赖 | 需校验器 / 库 | **零依赖**，只有 Python 标准库 |
+| 人的可读性 | 需工具才能读 | **直接读，不需要任何工具** |
+| 强制力 | schema 不合即拒 | 自检报错，但不阻断 |
+
+**取舍很明确**：放弃密码学强度，换取"打开文件就能看懂、不需要任何工具链"。
+适合单人本地使用；**如果你的场景需要防伪造或多人协作，应该用 AEP 而不是这个。**
+（AEP 直接写在描述里：*"Closes the closed-loop fabricated-provenance attack"* ——
+本仓库**做不到**防伪造，它只防"不小心把不确定当确定"。）
+
+### 更正记录（保留，不隐藏）
+
+本 README 初版写着"**没有已发布系统区分** planned/changed/ran/test-passed/independently-verified"。
+2026-10-10 调研中发现 [AEP](https://github.com/OnePunchForAll/AEP) 与 claude-mem 的 evidence-gate
+**都触及了这块**，因此该断言**不成立**，已改为上面的对照表述。
+
+保留这段记录是因为：**一个声称"重视证据"的项目，如果被发现说错了却不留痕，那它就没资格谈证据。**
+
 
 ## 它怎么工作
 
